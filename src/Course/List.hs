@@ -2,6 +2,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 -- + Complete the 10 exercises below by filling out the function bodies.
 --   Replace the function bodies (error "todo") with an appropriate solution.
@@ -17,7 +18,7 @@ import Course.Optional
 import qualified System.Environment as E
 import qualified Prelude as P
 import qualified Numeric as N
-
+import Test.QuickCheck
 
 -- $setup
 -- >>> import Test.QuickCheck
@@ -72,8 +73,8 @@ headOr ::
   a
   -> List a
   -> a
-headOr =
-  error "todo"
+headOr a Nil = a
+headOr _ (x :. _) = x
 
 -- | The product of the elements of a list.
 --
@@ -85,8 +86,7 @@ headOr =
 product ::
   List Int
   -> Int
-product =
-  error "todo"
+product = foldLeft (*) 1
 
 -- | Sum the elements of the list.
 --
@@ -100,8 +100,7 @@ product =
 sum ::
   List Int
   -> Int
-sum =
-  error "todo"
+sum = foldLeft (+) 0
 
 -- | Return the length of the list.
 --
@@ -112,8 +111,7 @@ sum =
 length ::
   List a
   -> Int
-length =
-  error "todo"
+length = foldLeft (const . (1+)) 0
 
 -- | Map the given function on each element of the list.
 --
@@ -127,8 +125,7 @@ map ::
   (a -> b)
   -> List a
   -> List b
-map =
-  error "todo"
+map f = foldRight ((:.) . f) Nil
 
 -- | Return elements satisfying the given predicate.
 --
@@ -144,8 +141,7 @@ filter ::
   (a -> Bool)
   -> List a
   -> List a
-filter =
-  error "todo"
+filter p = foldRight (\a b -> if p a then a:.b else b) Nil 
 
 -- | Append two lists to a new list.
 --
@@ -163,8 +159,7 @@ filter =
   List a
   -> List a
   -> List a
-(++) =
-  error "todo"
+(++) = flip $ foldRight (:.)
 
 infixr 5 ++
 
@@ -181,8 +176,7 @@ infixr 5 ++
 flatten ::
   List (List a)
   -> List a
-flatten =
-  error "todo"
+flatten = foldRight (++) Nil
 
 -- | Map a function then flatten to a list.
 --
@@ -198,8 +192,7 @@ flatMap ::
   (a -> List b)
   -> List a
   -> List b
-flatMap =
-  error "todo"
+flatMap f = flatten . map f
 
 -- | Flatten a list of lists to a list (again).
 -- HOWEVER, this time use the /flatMap/ function that you just wrote.
@@ -208,8 +201,7 @@ flatMap =
 flattenAgain ::
   List (List a)
   -> List a
-flattenAgain =
-  error "todo"
+flattenAgain = flatMap id
 
 -- | Convert a list of optional values to an optional list of values.
 --
@@ -236,8 +228,7 @@ flattenAgain =
 seqOptional ::
   List (Optional a)
   -> Optional (List a)
-seqOptional =
-  error "todo"
+seqOptional = foldRight (\a b -> bindOptional (\e -> mapOptional (e:.) b) a) (Full Nil)
 
 -- | Find the first element in the list matching the predicate.
 --
@@ -259,8 +250,7 @@ find ::
   (a -> Bool)
   -> List a
   -> Optional a
-find =
-  error "todo"
+find p = foldRight (\a b -> if p a then Full a else b) Empty
 
 -- | Determine if the length of the given list is greater than 4.
 --
@@ -681,3 +671,7 @@ instance P.Monad List where
     flip flatMap
   return =
     (:. Nil)
+
+-- | Tests all QuickCheck propositions in file
+runListTests :: IO Bool
+runListTests = $quickCheckAll
